@@ -1,0 +1,146 @@
+Generating 10,X10, matrix
+Time taken: 0.006019s
+Executing Serial FW on 10,X10, matrix
+Time taken: 0.000919s
+Executing mpi FW with 1, proc on 10,X10, matrix
+Time taken: 0.001507s
+Correct output.
+
+Executing mpi FW with 2, proc on 10,X10, matrix
+Time taken: 0.001202s
+Correct output.
+
+Executing mpi FW with 4, proc on 10,X10, matrix
+number of vertices not a multiple of processors allotted
+Correct output.
+
+Executing mpi FW with 8 proc on 10,X10, matrix
+number of vertices not a multiple of processors allotted
+Correct output.
+
+
+Generating 50,X50, matrix
+Time taken: 0.000282s
+Executing Serial FW on 50,X50, matrix
+Time taken: 0.000986s
+Executing mpi FW with 1, proc on 50,X50, matrix
+Time taken: 0.001022s
+Correct output.
+
+Executing mpi FW with 2, proc on 50,X50, matrix
+Time taken: 0.001247s
+Correct output.
+
+Executing mpi FW with 4, proc on 50,X50, matrix
+number of vertices not a multiple of processors allotted
+Correct output.
+
+Executing mpi FW with 8 proc on 50,X50, matrix
+number of vertices not a multiple of processors allotted
+Correct output.
+
+
+Generating 100,X100, matrix
+Time taken: 0.000944s
+Executing Serial FW on 100,X100, matrix
+Time taken: 0.005865s
+Executing mpi FW with 1, proc on 100,X100, matrix
+Time taken: 0.002967s
+Correct output.
+
+Executing mpi FW with 2, proc on 100,X100, matrix
+Time taken: 0.002587s
+Correct output.
+
+Executing mpi FW with 4, proc on 100,X100, matrix
+Time taken: 0.002764s
+Correct output.
+
+Executing mpi FW with 8 proc on 100,X100, matrix
+number of vertices not a multiple of processors allotted
+Correct output.
+
+
+Generating 500,X500, matrix
+Time taken: 0.022239s
+Executing Serial FW on 500,X500, matrix
+Time taken: 0.577741s
+Executing mpi FW with 1, proc on 500,X500, matrix
+Time taken: 0.150909s
+Correct output.
+
+Executing mpi FW with 2, proc on 500,X500, matrix
+Time taken: 0.097206s
+Correct output.
+
+Executing mpi FW with 4, proc on 500,X500, matrix
+Time taken: 0.072142s
+Correct output.
+
+Executing mpi FW with 8 proc on 500,X500, matrix
+number of vertices not a multiple of processors allotted
+Correct output.
+
+
+Generating 1000,X1000, matrix
+Time taken: 0.073790s
+Executing Serial FW on 1000,X1000, matrix
+Time taken: 4.455448s
+Executing mpi FW with 1, proc on 1000,X1000, matrix
+Time taken: 1.292129s
+Correct output.
+
+Executing mpi FW with 2, proc on 1000,X1000, matrix
+Time taken: 0.876303s
+Correct output.
+
+Executing mpi FW with 4, proc on 1000,X1000, matrix
+Time taken: 0.397292s
+Correct output.
+
+Executing mpi FW with 8 proc on 1000,X1000, matrix
+Time taken: 0.636993s
+Correct output.
+
+
+Generating 2000,X2000, matrix
+Time taken: 0.401209s
+Executing Serial FW on 2000,X2000, matrix
+Time taken: 48.611606s
+Executing mpi FW with 1, proc on 2000,X2000, matrix
+Time taken: 11.048017s
+Correct output.
+
+Executing mpi FW with 2, proc on 2000,X2000, matrix
+Time taken: 6.675549s
+Correct output.
+
+Executing mpi FW with 4, proc on 2000,X2000, matrix
+Time taken: 5.478640s
+Correct output.
+
+Executing mpi FW with 8 proc on 2000,X2000, matrix
+Time taken: 6.607374s
+Correct output.
+
+
+Generating 5000X5000 matrix
+Time taken: 2.367587s
+Executing Serial FW on 5000X5000 matrix
+Time taken: 758.402258s
+Executing mpi FW with 1, proc on 5000X5000 matrix
+Time taken: 160.074660s
+Correct output.
+
+Executing mpi FW with 2, proc on 5000X5000 matrix
+Time taken: 159.701399s
+Correct output.
+
+Executing mpi FW with 4, proc on 5000X5000 matrix
+Time taken: 150.775443s
+Correct output.
+
+Executing mpi FW with 8 proc on 5000X5000 matrix
+Time taken: 110.509663s
+Correct output.
+
