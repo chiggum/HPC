@@ -43,8 +43,8 @@ __global__ void match(int *delta, int *input, int *fStates, int start_, int end_
 }
 
 __global__ void specDFAMatching(int *delta, int *input, int *fStates, int q0, int len, int m, int n) {
-	int idx = threadIdx.x + blockIdx.x*blockDim.x;
-	int totalThreads = blockDim.x*gridDim.x;
+	long long int idx = threadIdx.x + blockIdx.x*blockDim.x;
+	long long int totalThreads = blockDim.x*gridDim.x;
 	/*
 	Dynamic parallelism
 	dim3 threadsPerBlock(512);
@@ -54,18 +54,21 @@ __global__ void specDFAMatching(int *delta, int *input, int *fStates, int q0, in
 
 	for(int i = 0; i < m; ++i) {
 		fStates[i + idx*m] = i;
-	} 
-	int start_=0, end_=len;
-	start_ = int(((m*(1.0*idx))/(m+totalThreads-1))*len);
-	end_ = int(((m*1.0*(idx+1))/(m+totalThreads-1))*len);
+	}
+	double L0 = (1.0*m*len)/(m+totalThreads-1);
+	long long int start_=0, end_=len;
+	if(idx!=0)
+		start_ = (L0 + ((idx-1.0)*L0)/m);
+	end_ = (L0 + (1.0*idx*L0)/m);
 	if(end_ > len) {
 		end_ = len;
 	}
+	
 	//printf("idx: %d start %d end %d\n", idx, start_, end_);
 	if(start_ > end_ || end_ < 0 || start_ < 0)
 		return;
 	if(idx == 0) {
-		for(int i = start_; i < end_; ++i) {
+		for(long long int i = start_; i < end_; ++i) {
 			fStates[idx*m] = delta[input[i] + fStates[idx*m]*n];
 		}
 	} else {
@@ -74,7 +77,7 @@ __global__ void specDFAMatching(int *delta, int *input, int *fStates, int q0, in
 		match<<<numBlocks, threadsPerBlock>>>(delta, input, fStates, start_, end_, m, n, idx);
 		*/
 		for(int i = 0; i < m; ++i) {
-			for(int j = start_; j < end_; ++j) {
+			for(long long int j = start_; j < end_; ++j) {
 				fStates[i+idx*m] = delta[input[j] + fStates[i+idx*m]*n];
 			}
 		}
@@ -83,7 +86,7 @@ __global__ void specDFAMatching(int *delta, int *input, int *fStates, int q0, in
 
 bool parMembershipTest(int *delta, bool *finalStates, int *input, int q0, int len, int m, int n) {
 	int *d_delta, *d_input, *d_fStates, *h_fStates;
-	int NUMBLOCKS = 1024;		// this value can be tuned
+	int NUMBLOCKS = 1024*32;		// this value can be tuned
 	int BLOCKSIZE = 1024;	// this value can be tuned
 	dim3 threadsPerBlock(BLOCKSIZE);
 	dim3 numBlocks(NUMBLOCKS);

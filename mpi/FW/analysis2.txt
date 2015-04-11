@@ -1,13 +1,13 @@
 Generating 10,X10, matrix
-Time taken: 0.006019s
+Time taken: 0.017323s
 Executing Serial FW on 10,X10, matrix
-Time taken: 0.000919s
+Time taken: 0.002348s
 Executing mpi FW with 1, proc on 10,X10, matrix
-Time taken: 0.001507s
+Time taken: 0.002215s
 Correct output.
 
 Executing mpi FW with 2, proc on 10,X10, matrix
-Time taken: 0.001202s
+Time taken: 0.000811s
 Correct output.
 
 Executing mpi FW with 4, proc on 10,X10, matrix
@@ -20,15 +20,15 @@ Correct output.
 
 
 Generating 50,X50, matrix
-Time taken: 0.000282s
+Time taken: 0.000274s
 Executing Serial FW on 50,X50, matrix
-Time taken: 0.000986s
+Time taken: 0.000981s
 Executing mpi FW with 1, proc on 50,X50, matrix
-Time taken: 0.001022s
+Time taken: 0.001141s
 Correct output.
 
 Executing mpi FW with 2, proc on 50,X50, matrix
-Time taken: 0.001247s
+Time taken: 0.001292s
 Correct output.
 
 Executing mpi FW with 4, proc on 50,X50, matrix
@@ -41,19 +41,19 @@ Correct output.
 
 
 Generating 100,X100, matrix
-Time taken: 0.000944s
+Time taken: 0.000746s
 Executing Serial FW on 100,X100, matrix
-Time taken: 0.005865s
+Time taken: 0.005812s
 Executing mpi FW with 1, proc on 100,X100, matrix
-Time taken: 0.002967s
+Time taken: 0.003023s
 Correct output.
 
 Executing mpi FW with 2, proc on 100,X100, matrix
-Time taken: 0.002587s
+Time taken: 0.002614s
 Correct output.
 
 Executing mpi FW with 4, proc on 100,X100, matrix
-Time taken: 0.002764s
+Time taken: 0.002846s
 Correct output.
 
 Executing mpi FW with 8 proc on 100,X100, matrix
@@ -62,19 +62,19 @@ Correct output.
 
 
 Generating 500,X500, matrix
-Time taken: 0.022239s
+Time taken: 0.022188s
 Executing Serial FW on 500,X500, matrix
-Time taken: 0.577741s
+Time taken: 0.562835s
 Executing mpi FW with 1, proc on 500,X500, matrix
-Time taken: 0.150909s
+Time taken: 0.152907s
 Correct output.
 
 Executing mpi FW with 2, proc on 500,X500, matrix
-Time taken: 0.097206s
+Time taken: 0.099583s
 Correct output.
 
 Executing mpi FW with 4, proc on 500,X500, matrix
-Time taken: 0.072142s
+Time taken: 0.093966s
 Correct output.
 
 Executing mpi FW with 8 proc on 500,X500, matrix
@@ -83,64 +83,65 @@ Correct output.
 
 
 Generating 1000,X1000, matrix
-Time taken: 0.073790s
+Time taken: 0.076799s
 Executing Serial FW on 1000,X1000, matrix
-Time taken: 4.455448s
+Time taken: 5.666946s
 Executing mpi FW with 1, proc on 1000,X1000, matrix
-Time taken: 1.292129s
+Time taken: 1.518540s
 Correct output.
 
 Executing mpi FW with 2, proc on 1000,X1000, matrix
-Time taken: 0.876303s
+Time taken: 0.791492s
 Correct output.
 
 Executing mpi FW with 4, proc on 1000,X1000, matrix
-Time taken: 0.397292s
+Time taken: 0.639774s
 Correct output.
 
 Executing mpi FW with 8 proc on 1000,X1000, matrix
-Time taken: 0.636993s
+Time taken: 0.778047s
 Correct output.
 
 
 Generating 2000,X2000, matrix
-Time taken: 0.401209s
+Time taken: 0.430328s
 Executing Serial FW on 2000,X2000, matrix
-Time taken: 48.611606s
+Time taken: 49.192991s
 Executing mpi FW with 1, proc on 2000,X2000, matrix
-Time taken: 11.048017s
+Time taken: 12.057827s
 Correct output.
 
 Executing mpi FW with 2, proc on 2000,X2000, matrix
-Time taken: 6.675549s
+Time taken: 6.329342s
 Correct output.
 
 Executing mpi FW with 4, proc on 2000,X2000, matrix
-Time taken: 5.478640s
+Time taken: 7.657024s
 Correct output.
 
 Executing mpi FW with 8 proc on 2000,X2000, matrix
-Time taken: 6.607374s
+Time taken: 6.728912s
 Correct output.
 
 
 Generating 5000X5000 matrix
-Time taken: 2.367587s
+Time taken: 2.791659s
 Executing Serial FW on 5000X5000 matrix
-Time taken: 758.402258s
+Time taken: 754.650605s
 Executing mpi FW with 1, proc on 5000X5000 matrix
-Time taken: 160.074660s
+Time taken: 209.259582s
 Correct output.
 
 Executing mpi FW with 2, proc on 5000X5000 matrix
-Time taken: 159.701399s
+Time taken: 170.110562s
 Correct output.
 
 Executing mpi FW with 4, proc on 5000X5000 matrix
-Time taken: 150.775443s
+Time taken: 104.409713s
 Correct output.
 
 Executing mpi FW with 8 proc on 5000X5000 matrix
-Time taken: 110.509663s
+Time taken: 107.625836s
 Correct output.
+
 
