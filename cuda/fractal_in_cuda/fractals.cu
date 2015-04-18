@@ -171,6 +171,16 @@ __device__ complex<double> getFuncVal(complex<double> z, complex<double> c, int 
 			return sin(z)+c;
 		case 15:
 			return log(z)*cos(z) + c;
+		case 16:
+			return cos(z)/(z)+c;
+		case 17:
+			return log(z)/z + c;
+		case 18:
+			return sinh(z)*z+c;
+		case 19:
+			return sinh(z)*cosh(z)*sin(z)*cos(z)+c;
+		case 20:
+			return exp(exp(z))+c;
 		default:
 			return z*z+c;
 	}
@@ -188,8 +198,6 @@ __global__ void fractalForm(unsigned char *mat, int maxZAbs, int maxN, int minN,
 	double im = iMin + (j_*(iMax-iMin))/(1.0*W);
 	complex<double> z(re,im);
 	complex<double> c(iReal, iImg);
-	//cuDoubleComplex z = make_cuDoubleComplex(re, im);
-	//cuDoubleComplex c = make_cuDoubleComplex(iReal, iImg);
 	size_t n;
 	for(n = maxN; n >= minN && abs(z) < maxZAbs; n-=decayN) {
 		z = getFuncVal(z, c, categ);
