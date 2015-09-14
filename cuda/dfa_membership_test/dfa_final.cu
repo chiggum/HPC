@@ -8,7 +8,6 @@ Reference:
 
 #include <cstdlib>
 #include <cstdio>
-#include <omp.h>
 
 #define cudaMemcpyHTD(dest, src, sizeInBytes) cudaMemcpy(dest, src, sizeInBytes, cudaMemcpyHostToDevice)
 #define cudaMemcpyDTH(dest, src, sizeInBytes) cudaMemcpy(dest, src, sizeInBytes, cudaMemcpyDeviceToHost)
@@ -43,19 +42,14 @@ __global__ void specDFAMatching(ull M, ull N, ull len, ull *delta, char *input, 
 	}
 }
 
-void seqStateRedn(ull M, ull *fStates, ull q0, ull maxThreads) {
-	for(ull s=1; s<maxThreads; s*=2) {
-		#pragma omp parallel for
-		for(ull idx=0; idx<maxThreads; ++idx) {
-			if(idx%(2*s)==0) {
-				if((idx+s)<maxThreads) {
-					#pragma omp parallel for
-					for(ull i=0; i<M; ++i) {
-						ull x=fStates[i+idx*M];
-						fStates[i+idx*M]=fStates[x+(idx+s)*M];
-					}
-				}
-			}
+__global__ void finalStateUsingRedn1(ull M, ull *fStates, ull q0, ull maxThreads, ull s) {
+	ull idx=threadIdx.x+blockIdx.x*blockDim.x;
+	if(idx+s>=maxThreads)
+		return;
+	if(idx%(2*s)==0) {
+		for(ull i=0; i<M; ++i) {
+			ull x=fStates[i+idx*M];
+			fStates[i+idx*M]=fStates[x+(idx+s)*M];
 		}
 	}
 }
@@ -87,17 +81,16 @@ ull SIMTMembershipTest(ull M, ull N, ull len, ull *h_delta, bool *h_finalState, 
 	#endif
 	specDFAMatching<<<numBlocks, threadsPerBlock>>>(M, N, len, d_delta, d_input, d_fStates, q0, maxThreads);
 
-	ull *h_fStates=(ull*)malloc(M*maxThreads*sizeof(ull));
-	cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(ull));
+	for(ull s=1; s<maxThreads; s*=2) {
+		finalStateUsingRedn1<<<numBlocks, threadsPerBlock>>>(M, d_fStates, q0, maxThreads, s);
+	}
 
-	seqStateRedn(M, h_fStates, q0, maxThreads);
-
-	ull ret=h_fStates[q0];
+	ull ret;
+	cudaMemcpyDTH(&ret, d_fStates+q0, sizeof(ull));
 
 	cudaFree(d_delta);
 	cudaFree(d_input);
 	cudaFree(d_fStates);
-	delete[] h_fStates;
 
 	return ret;
 }

@@ -56,11 +56,17 @@ __global__ void finalStateUsingRedn(int M, int *fStates, int q0, unsigned int ma
 	}
 }
 
-__global__ void finalStateUsingRedn1(int M, int *fStates, int q0, unsigned int maxThreads) {
+__global__ void finalStateUsingRedn1(int M, int *fStates, int q0, unsigned int maxThreads, unsigned long long s) {
 	unsigned int idx=threadIdx.x+blockIdx.x*blockDim.x;
-	unsigned int offset=1;
-	for (unsigned int d = maxThreads>>1; d > 0; d >>= 1) {
-		
+	if(idx>=maxThreads)
+		return;
+	if(idx%(2*s)==0) {
+		if((idx+s)<maxThreads) {
+			for(int i=0; i<M; ++i) {
+				int x=fStates[i+idx*M];
+				fStates[i+idx*M]=fStates[x+(idx+s)*M];
+			}
+		}
 	}
 }
 
@@ -106,8 +112,8 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 
 	specDFAMatching<<<numBlocks, threadsPerBlock>>>(M, N, len, d_delta, d_input, d_fStates, q0, maxThreads);
 
-	int *h_fStates=(int*)malloc(M*maxThreads*sizeof(int));
-	cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(int));
+	//int *h_fStates=(int*)malloc(M*maxThreads*sizeof(int));
+	//cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(int));
 	/*
 	checking
 
@@ -119,7 +125,14 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 	/*********
 	**********/
 
-	seqStateRedn(M, h_fStates, q0, maxThreads);
+	/****NEW WAY****/
+	for(unsigned long long s=1; s<maxThreads; s=s*2) {
+		finalStateUsingRedn1<<<numBlocks, threadsPerBlock>>>(M, d_fStates, q0, maxThreads, s);
+	}
+
+	/**************/
+
+	//seqStateRedn(M, h_fStates, q0, maxThreads);
 	//finalStateUsingRedn<<<numBlocks, threadsPerBlock>>>(M, d_fStates, q0, maxThreads);
 	//cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(int));
 
@@ -135,13 +148,13 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 	//int *finalStReached=(int*)malloc(maxThreads*M*sizeof(int));
 	//cudaMemcpyDTH(finalStReached, d_fStates, M*maxThreads*sizeof(int));
 
-	int ret=h_fStates[q0];
+	int ret;
+	cudaMemcpyDTH(&ret, d_fStates+q0, sizeof(int));
 	//printf("%d %d\n", ret, ret2);
 
 	cudaFree(d_delta);
 	cudaFree(d_input);
 	cudaFree(d_fStates);
-	delete[] h_fStates;
 	//delete[] finalStReached;
 
 	return ret;
