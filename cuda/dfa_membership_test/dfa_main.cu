@@ -56,6 +56,14 @@ __global__ void finalStateUsingRedn(int M, int *fStates, int q0, unsigned int ma
 	}
 }
 
+__global__ void finalStateUsingRedn1(int M, int *fStates, int q0, unsigned int maxThreads) {
+	unsigned int idx=threadIdx.x+blockIdx.x*blockDim.x;
+	unsigned int offset=1;
+	for (unsigned int d = maxThreads>>1; d > 0; d >>= 1) {
+		
+	}
+}
+
 void seqStateRedn(int M, int *fStates, int q0, long long unsigned int maxThreads) {
 	for(long long unsigned int s=1; s<maxThreads; s*=2) {
 		#pragma omp parallel for

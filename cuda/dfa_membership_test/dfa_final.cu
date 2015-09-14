@@ -80,8 +80,11 @@ ull SIMTMembershipTest(ull M, ull N, ull len, ull *h_delta, bool *h_finalState, 
 	dim3 threadsPerBlock(BLOCKSIZE);
 	ull nBlocks=(maxThreads-1)/BLOCKSIZE+1;
 	dim3 numBlocks(nBlocks);
+	#ifdef DEB
 	printf("Max threads: %llu\nNum blocks: %llu\nThreads per block: %llu\nVirtual Max threads: %llu\n\n", maxThreads, nBlocks, (ull)BLOCKSIZE, (ull)BLOCKSIZE*nBlocks);
-
+	#else
+	printf("%llu ", maxThreads);
+	#endif
 	specDFAMatching<<<numBlocks, threadsPerBlock>>>(M, N, len, d_delta, d_input, d_fStates, q0, maxThreads);
 
 	ull *h_fStates=(ull*)malloc(M*maxThreads*sizeof(ull));
@@ -121,7 +124,11 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	#ifdef DEB
 	printf("Number of states: %llu\nNumber of alphabets: %llu\nLength of input string: %llu\n\n",M, N, len);
+	#else
+	printf("%llu %llu ", M, len);
+	#endif
 
 	ull i, j;
 	ull *delta;
@@ -158,20 +165,32 @@ int main(int argc, char **argv) {
 	for(i=0; i<len; ++i) {
 		fst=delta[(ull)(input[i]-'0')+fst*N];
 	}
+	#ifdef DEB
 	printf("Sequential says final state is: %llu and %s a member\n", fst, (finalState[fst]?"YES":"NOT"));
+	#endif
 
 	end = clock();
 	double cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+	#ifdef DEB
 	printf("Time by sequential algo: %lf\n", cpuTime);
+	#else
+	printf("%lf ", cpuTime);
+	#endif
 
 	start=clock();
 	//parallel
 	ull res=SIMTMembershipTest(M, N, len, delta, finalState, input, q0, K);
+	#ifdef DEB
 	printf("Parallel says final state is: %llu and %s a member\n", res, (finalState[res]?"YES":"NOT"));
+	#endif
 
 	end = clock();
 	cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+	#ifdef DEB
 	printf("Time by Parallel algo: %lf\n", cpuTime);
+	#else
+	printf("%lf\n", cpuTime);
+	#endif
 
 	delete[] delta;
 	delete[] finalState;
