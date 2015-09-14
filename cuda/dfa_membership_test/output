@@ -1,0 +1,23 @@
+Number of states: 5
+Number of alphabets: 5
+Length of input string: 1002
+====DELTA===
+0 0 -> 3,  0 1 -> 1,  0 2 -> 2,  0 3 -> 0,  0 4 -> 3,  
+1 0 -> 0,  1 1 -> 1,  1 2 -> 2,  1 3 -> 4,  1 4 -> 1,  
+2 0 -> 2,  2 1 -> 2,  2 2 -> 0,  2 3 -> 4,  2 4 -> 3,  
+3 0 -> 1,  3 1 -> 0,  3 2 -> 1,  3 3 -> 2,  3 4 -> 1,  
+4 0 -> 1,  4 1 -> 3,  4 2 -> 2,  4 3 -> 4,  4 4 -> 2,  
+====ACCEPTING=STATES===
+State 0 -> REJECT
+State 1 -> REJECT
+State 2 -> REJECT
+State 3 -> ACCEPT
+State 4 -> ACCEPT
+Sequential says final state is: 0 and NOT a member
+Max threads: 998
+Num blocks: 1
+Threads per block: 1024
+Virtual Max threads: 1024
+Parallel CHECKING says final state is: 0 and NOT a member
+2044928
+Parallel says final state is: 0 and NOT a member

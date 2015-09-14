@@ -1,7 +1,3 @@
-/*
-
-SET PROPER LAUNCH OF KERNEL.
-*/
 #include <iostream>
 #include <string>
 #include <cstdlib>

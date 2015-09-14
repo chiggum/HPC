@@ -1,1 +1,0 @@
-/home/dhruv/code/repos/HPC/cuda/fractal_in_cuda/CMakeFiles/fractal.dir
