@@ -8,6 +8,7 @@ Reference:
 
 #include <cstdlib>
 #include <cstdio>
+#include <omp.h>
 
 #define cudaMemcpyHTD(dest, src, sizeInBytes) cudaMemcpy(dest, src, sizeInBytes, cudaMemcpyHostToDevice)
 #define cudaMemcpyDTH(dest, src, sizeInBytes) cudaMemcpy(dest, src, sizeInBytes, cudaMemcpyDeviceToHost)
@@ -40,21 +41,34 @@ __global__ void specDFAMatching(int M, int N, int len, int *delta, char *input, 
 	}
 }
 
-__global__ void finalStateUsingRedn(int M, int *fStates, int q0, unsigned int maxThreads, int *d_check) {
+__global__ void finalStateUsingRedn(int M, int *fStates, int q0, unsigned int maxThreads) {
 	unsigned int idx=threadIdx.x+blockIdx.x*blockDim.x;
-	if(idx>=maxThreads)
-		return;
-	for(unsigned int s=1; s<maxThreads; s*=2) {
-		if(idx%(2*s)==0) {
+	for(long long unsigned int s=1; s<maxThreads; s*=2) {
+		if(idx<maxThreads && idx%(2*s)==0) {
 			if((idx+s)<maxThreads) {
 				for(int i=0; i<M; ++i) {
 					int x=fStates[i+idx*M];
 					fStates[i+idx*M]=fStates[x+(idx+s)*M];
 				}
-				d_check[idx+s]++;
 			}
 		}
 		__syncthreads();
+	}
+}
+
+void seqStateRedn(int M, int *fStates, int q0, long long unsigned int maxThreads) {
+	for(long long unsigned int s=1; s<maxThreads; s*=2) {
+		#pragma omp parallel for
+		for(unsigned int idx=0; idx<maxThreads; ++idx) {
+			if(idx%(2*s)==0) {
+				if((idx+s)<maxThreads) {
+					for(int i=0; i<M; ++i) {
+						int x=fStates[i+idx*M];
+						fStates[i+idx*M]=fStates[x+(idx+s)*M];
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -63,7 +77,7 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 	char *d_input;
 	int *d_fStates;
 	int *d_check;
-	int maxThreads=(len/K)-M+1;
+	long long int maxThreads=(len/K)-M+1;
 	if(len%K!=0) {
 		maxThreads=(len-M+1);
 	}
@@ -73,7 +87,6 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 	cudaMalloc((void**)&d_fStates, (M*maxThreads)*sizeof(int));
 	cudaMalloc((void**)&d_check, (maxThreads)*sizeof(int));
 	cudaMemset(d_fStates, 0, M*maxThreads*sizeof(int));
-	cudaMemset(d_check, 0, maxThreads*sizeof(int));
 
 	cudaMemcpyHTD(d_delta, h_delta, M*N*sizeof(int));
 	cudaMemcpyHTD(d_input, h_input, len*sizeof(char));
@@ -81,15 +94,15 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 	dim3 threadsPerBlock(BLOCKSIZE);
 	int nBlocks=(maxThreads-1)/BLOCKSIZE+1;
 	dim3 numBlocks(nBlocks);
-	printf("Max threads: %d\nNum blocks: %d\nThreads per block: %d\nVirtual Max threads: %d\n", maxThreads, nBlocks, BLOCKSIZE, BLOCKSIZE*nBlocks);
+	printf("Max threads: %lld\nNum blocks: %d\nThreads per block: %d\nVirtual Max threads: %d\n", maxThreads, nBlocks, BLOCKSIZE, BLOCKSIZE*nBlocks);
 
 	specDFAMatching<<<numBlocks, threadsPerBlock>>>(M, N, len, d_delta, d_input, d_fStates, q0, maxThreads);
 
-	/*
-	checking
-	*/
 	int *h_fStates=(int*)malloc(M*maxThreads*sizeof(int));
 	cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(int));
+	/*
+	checking
+
 	int fst=q0;
 	for(int i=0; i<maxThreads; ++i) {
 		fst=h_fStates[fst+i*M];
@@ -98,25 +111,30 @@ int SIMTMembershipTest(int M, int N, int len, int *h_delta, bool *h_finalState, 
 	/*********
 	**********/
 
-	finalStateUsingRedn<<<numBlocks, threadsPerBlock>>>(M, d_fStates, q0, maxThreads, d_check);
+	seqStateRedn(M, h_fStates, q0, maxThreads);
+	//finalStateUsingRedn<<<numBlocks, threadsPerBlock>>>(M, d_fStates, q0, maxThreads);
+	//cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(int));
+
+	/*
 	cudaMemcpyDTH(h_fStates, d_check, maxThreads*sizeof(int));
 	for(int i=0; i<maxThreads; ++i) {
 		if(false && h_fStates[i]!=1) {
 			printf("Problem: %d :: %d\n", i, h_fStates[i]);
 		}
 	}
+	*/
 
-	int *finalStReached=(int*)malloc(maxThreads*M*sizeof(int));
-	cudaMemcpyDTH(finalStReached, d_fStates, M*maxThreads*sizeof(int));
+	//int *finalStReached=(int*)malloc(maxThreads*M*sizeof(int));
+	//cudaMemcpyDTH(finalStReached, d_fStates, M*maxThreads*sizeof(int));
 
-	int ret=finalStReached[q0];
+	int ret=h_fStates[q0];
+	//printf("%d %d\n", ret, ret2);
 
 	cudaFree(d_delta);
-	cudaFree(d_check);
 	cudaFree(d_input);
 	cudaFree(d_fStates);
 	delete[] h_fStates;
-	delete[] finalStReached;
+	//delete[] finalStReached;
 
 	return ret;
 }
@@ -130,7 +148,10 @@ int main(int argc, char **argv) {
 	M=atoi(argv[1]);
 	N=atoi(argv[2]);
 	len=atoi(argv[3]);
-
+	int K=1;
+	if(argc>=5) {
+		K=atoi(argv[4]);
+	}
 	if(M<2) {
 		printf("Min number of states allowed is 2\n");
 		exit(1);
@@ -170,6 +191,7 @@ int main(int argc, char **argv) {
 	}
 
 	//input string
+	/*
 	if(len<20)
 		printf("INPUT: %s\n", input);
 
@@ -187,6 +209,9 @@ int main(int argc, char **argv) {
 	for(i=0; i<M; ++i) {
 		printf("State %d -> %s\n", i, (finalState[i]?"ACCEPT":"REJECT"));
 	}
+	*/
+	clock_t start, end;
+	start = clock();
 
 	//Sequential
 	int fst=q0;
@@ -195,9 +220,18 @@ int main(int argc, char **argv) {
 	}
 	printf("Sequential says final state is: %d and %s a member\n", fst, (finalState[fst]?"YES":"NOT"));
 
+	end = clock();
+	double cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+	printf("Time by sequential algo: %lF\n", cpuTime);
+
+	start=clock();
 	//parallel
-	int res=SIMTMembershipTest(M, N, len, delta, finalState, input, q0);
+	int res=SIMTMembershipTest(M, N, len, delta, finalState, input, q0, K);
 	printf("Parallel says final state is: %d and %s a member\n", res, (finalState[res]?"YES":"NOT"));
+
+	end = clock();
+	cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+	printf("Time by Parallel algo: %lF\n", cpuTime);
 
 	return 0;
 }

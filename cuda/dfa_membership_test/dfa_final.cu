@@ -1,0 +1,181 @@
+/*
+DFA Membership test in SIMT Environment
+Author: Dhruv Kohli
+
+Reference:
+"A Speculative Parallel DFA Membership Test for Multicore, SIMD and Cloud Computing Environments" Yousun Ko, Minyoung Jung, Yo-Sub Han, Bernd Burgstaller
+*/
+
+#include <cstdlib>
+#include <cstdio>
+#include <omp.h>
+
+#define cudaMemcpyHTD(dest, src, sizeInBytes) cudaMemcpy(dest, src, sizeInBytes, cudaMemcpyHostToDevice)
+#define cudaMemcpyDTH(dest, src, sizeInBytes) cudaMemcpy(dest, src, sizeInBytes, cudaMemcpyDeviceToHost)
+
+#define BLOCKSIZE 1024
+
+typedef unsigned long long int ull;
+
+__global__ void specDFAMatching(ull M, ull N, ull len, ull *delta, char *input, ull *fStates, ull q0, ull maxThreads) {
+	ull idx=threadIdx.x+blockIdx.x*blockDim.x;
+	if(idx>=maxThreads)
+		return;
+	ull i, j;
+	if(idx==0) {
+		ull fst=q0;
+		ull l=0;
+		ull r=(M)*(len/(M+maxThreads-1))-1;
+		for(i=l; i<=r; ++i) {
+			fst=delta[(ull)(input[i]-'0')+fst*N];
+		}
+		fStates[q0+idx*M]=fst;
+	} else {
+		ull l=(M)*(len/(M+maxThreads-1)) + (idx-1)*(len/(M+maxThreads-1));
+		ull r=l+(len/(M+maxThreads-1))-1;
+		for(j=0; j<M; ++j) {
+			ull fst=j;
+			for(i=l; i<=r; ++i) {
+				fst=delta[(ull)(input[i]-'0')+fst*N];
+			}
+			fStates[j+idx*M]=fst;
+		}
+	}
+}
+
+void seqStateRedn(ull M, ull *fStates, ull q0, ull maxThreads) {
+	for(ull s=1; s<maxThreads; s*=2) {
+		#pragma omp parallel for
+		for(ull idx=0; idx<maxThreads; ++idx) {
+			if(idx%(2*s)==0) {
+				if((idx+s)<maxThreads) {
+					#pragma omp parallel for
+					for(ull i=0; i<M; ++i) {
+						ull x=fStates[i+idx*M];
+						fStates[i+idx*M]=fStates[x+(idx+s)*M];
+					}
+				}
+			}
+		}
+	}
+}
+
+ull SIMTMembershipTest(ull M, ull N, ull len, ull *h_delta, bool *h_finalState, char *h_input, ull q0, ull K=1) {
+	ull *d_delta;
+	char *d_input;
+	ull *d_fStates;
+	ull maxThreads=(len/K)-M+1;
+	if(len%K!=0) {
+		maxThreads=(len-M+1);
+	}
+
+	cudaMalloc((void**)&d_delta, M*N*sizeof(ull));
+	cudaMalloc((void**)&d_input, len*sizeof(char));
+	cudaMalloc((void**)&d_fStates, (M*maxThreads)*sizeof(ull));
+	cudaMemset(d_fStates, 0, M*maxThreads*sizeof(ull));
+
+	cudaMemcpyHTD(d_delta, h_delta, M*N*sizeof(ull));
+	cudaMemcpyHTD(d_input, h_input, len*sizeof(char));
+
+	dim3 threadsPerBlock(BLOCKSIZE);
+	ull nBlocks=(maxThreads-1)/BLOCKSIZE+1;
+	dim3 numBlocks(nBlocks);
+	printf("Max threads: %llu\nNum blocks: %llu\nThreads per block: %llu\nVirtual Max threads: %llu\n\n", maxThreads, nBlocks, (ull)BLOCKSIZE, (ull)BLOCKSIZE*nBlocks);
+
+	specDFAMatching<<<numBlocks, threadsPerBlock>>>(M, N, len, d_delta, d_input, d_fStates, q0, maxThreads);
+
+	ull *h_fStates=(ull*)malloc(M*maxThreads*sizeof(ull));
+	cudaMemcpyDTH(h_fStates, d_fStates, M*maxThreads*sizeof(ull));
+
+	seqStateRedn(M, h_fStates, q0, maxThreads);
+
+	ull ret=h_fStates[q0];
+
+	cudaFree(d_delta);
+	cudaFree(d_input);
+	cudaFree(d_fStates);
+	delete[] h_fStates;
+
+	return ret;
+}
+
+int main(int argc, char **argv) {
+	if(argc<4) {
+		printf("Usage: %s NUM_STATES NUM_ALPHABETS LEN_OF_INPUT\n", argv[0]);
+		exit(1);
+	}
+	ull M, N, len;
+	M=strtoull(argv[1], NULL, 10);
+	N=strtoull(argv[2], NULL, 10);
+	len=strtoull(argv[3], NULL, 10);
+	ull K=1;
+	if(argc>=5) {
+		K=strtoull(argv[4], NULL, 10);
+	}
+	if(M<2) {
+		printf("Min number of states allowed is 2\n");
+		exit(1);
+	}
+	if(N<2 || N>10) {
+		printf("Number of alphabets should lie b/w 2 and 10 (inclusive)\n");
+		exit(1);
+	}
+
+	printf("Number of states: %llu\nNumber of alphabets: %llu\nLength of input string: %llu\n\n",M, N, len);
+
+	ull i, j;
+	ull *delta;
+	bool *finalState;
+	char *input;
+	ull q0=0;
+	
+	delta=(ull*)malloc(M*N*sizeof(ull));
+	for(i=0; i<M; ++i) {
+		for(j=0; j<N; ++j) {
+			delta[j+i*N]=(rand()%M);
+		}
+	}
+
+	finalState=(bool*)malloc(M*sizeof(bool));
+	for(i=0; i<M-1; ++i) {
+		if((1.0*rand())/RAND_MAX > 0.8)
+			finalState[i]=true;
+		else
+			finalState[i]=false;
+	}
+	finalState[M-1]=true;
+
+	input=(char*)malloc(len*sizeof(char));
+	for(i=0; i<len; ++i) {
+		input[i]=(char)('0'+(rand()%N));
+	}
+
+	clock_t start, end;
+	start = clock();
+
+	//Sequential
+	ull fst=q0;
+	for(i=0; i<len; ++i) {
+		fst=delta[(ull)(input[i]-'0')+fst*N];
+	}
+	printf("Sequential says final state is: %llu and %s a member\n", fst, (finalState[fst]?"YES":"NOT"));
+
+	end = clock();
+	double cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+	printf("Time by sequential algo: %lf\n", cpuTime);
+
+	start=clock();
+	//parallel
+	ull res=SIMTMembershipTest(M, N, len, delta, finalState, input, q0, K);
+	printf("Parallel says final state is: %llu and %s a member\n", res, (finalState[res]?"YES":"NOT"));
+
+	end = clock();
+	cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+	printf("Time by Parallel algo: %lf\n", cpuTime);
+
+	delete[] delta;
+	delete[] finalState;
+	delete[] input;
+
+	return 0;
+}
