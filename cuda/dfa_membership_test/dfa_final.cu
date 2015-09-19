@@ -1,9 +1,12 @@
 /*
 DFA Membership test in SIMT Environment
 Author: Dhruv Kohli
+Mentor: Kalpesh Kapoor
 
 Reference:
 "A Speculative Parallel DFA Membership Test for Multicore, SIMD and Cloud Computing Environments" Yousun Ko, Minyoung Jung, Yo-Sub Han, Bernd Burgstaller
+
+For now: length of input must be a multiple of size of chunk assigned to each thread.
 */
 
 #include <cstdlib>
@@ -60,7 +63,9 @@ ull SIMTMembershipTest(ull M, ull N, ull len, ull *h_delta, bool *h_finalState, 
 	ull *d_fStates;
 	ull maxThreads=(len/K)-M+1;
 	if(len%K!=0) {
-		maxThreads=(len-M+1);
+		//maxThreads=(len-M+1);
+		printf("Current impl. constrains length of input string to be a multiple of K\n");
+		exit(EXIT_FAILURE);
 	}
 
 	cudaMalloc((void**)&d_delta, M*N*sizeof(ull));
@@ -75,7 +80,7 @@ ull SIMTMembershipTest(ull M, ull N, ull len, ull *h_delta, bool *h_finalState, 
 	ull nBlocks=(maxThreads-1)/BLOCKSIZE+1;
 	dim3 numBlocks(nBlocks);
 	#ifdef DEB
-	printf("Max threads: %llu\nNum blocks: %llu\nThreads per block: %llu\nVirtual Max threads: %llu\n\n", maxThreads, nBlocks, (ull)BLOCKSIZE, (ull)BLOCKSIZE*nBlocks);
+	printf("Max threads: %llu\nNum blocks: %llu\nThreads per block: %llu\nVirtual Max threads: %llu\nK: %llu\n\n", maxThreads, nBlocks, (ull)BLOCKSIZE, (ull)BLOCKSIZE*nBlocks, K);
 	#else
 	printf("%llu ", maxThreads);
 	#endif
@@ -97,16 +102,20 @@ ull SIMTMembershipTest(ull M, ull N, ull len, ull *h_delta, bool *h_finalState, 
 
 int main(int argc, char **argv) {
 	if(argc<4) {
-		printf("Usage: %s NUM_STATES NUM_ALPHABETS LEN_OF_INPUT\n", argv[0]);
-		exit(1);
+		printf("Usage: %s NUM_STATES NUM_ALPHABETS LEN_OF_INPUT [CHUNK_SIZE_PER_PROC] [FLAG_TO_NOT_RUN_SEQ]\n", argv[0]);
+		exit(EXIT_FAILURE);
 	}
 	ull M, N, len;
 	M=strtoull(argv[1], NULL, 10);
 	N=strtoull(argv[2], NULL, 10);
 	len=strtoull(argv[3], NULL, 10);
 	ull K=1;
+	bool toRunSeq=true;
 	if(argc>=5) {
 		K=strtoull(argv[4], NULL, 10);
+	}
+	if(argc>=6) {
+		toRunSeq=false;
 	}
 	if(M<2) {
 		printf("Min number of states allowed is 2\n");
@@ -152,23 +161,26 @@ int main(int argc, char **argv) {
 
 	clock_t start, end;
 	start = clock();
+	double cpuTime;
 
-	//Sequential
-	ull fst=q0;
-	for(i=0; i<len; ++i) {
-		fst=delta[(ull)(input[i]-'0')+fst*N];
+	if(toRunSeq) {
+		//Sequential
+		ull fst=q0;
+		for(i=0; i<len; ++i) {
+			fst=delta[(ull)(input[i]-'0')+fst*N];
+		}
+		#ifdef DEB
+		printf("Sequential says final state is: %llu and %s a member\n", fst, (finalState[fst]?"YES":"NOT"));
+		#endif
+
+		end = clock();
+		cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+		#ifdef DEB
+		printf("Time by sequential algo: %lf\n", cpuTime);
+		#else
+		printf("%lf ", cpuTime);
+		#endif
 	}
-	#ifdef DEB
-	printf("Sequential says final state is: %llu and %s a member\n", fst, (finalState[fst]?"YES":"NOT"));
-	#endif
-
-	end = clock();
-	double cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
-	#ifdef DEB
-	printf("Time by sequential algo: %lf\n", cpuTime);
-	#else
-	printf("%lf ", cpuTime);
-	#endif
 
 	start=clock();
 	//parallel
