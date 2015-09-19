@@ -1,7 +1,7 @@
 /*
 DFA Membership test in SIMT Environment
 Author: Dhruv Kohli
-Mentor: Kalpesh Kapoor
+Mentor: Prof. Kalpesh Kapoor
 
 Reference:
 "A Speculative Parallel DFA Membership Test for Multicore, SIMD and Cloud Computing Environments" Yousun Ko, Minyoung Jung, Yo-Sub Han, Bernd Burgstaller
